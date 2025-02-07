@@ -1,0 +1,26 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background-color: #f4f4f4;
+}
+h1 {
+    color: #333;
+}
+.movie-container {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+.movie-container img {
+    max-width: 500px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+.movie-container p {
+    font-size: 1.1em;
+}
+.error-message {
+    color: red;
+}
