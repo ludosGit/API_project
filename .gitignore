@@ -1,2 +1,8 @@
 trash/
+tutorials/
 poetry.lock
+poetry_explained.txt
+
+__pycache__/
+
+instance/

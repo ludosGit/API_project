@@ -9,7 +9,6 @@
 # Custom Validators: Allows defining custom validation logic.
 
 from pydantic import BaseModel
-from datetime import datetime
 from models.genre import Genre
 
 class Movie(BaseModel):
@@ -19,33 +18,22 @@ class Movie(BaseModel):
     comment: str
     director: str
     year: int
-    views: list[str]
-    image: str = None
+    view_date: str
+    image: str = ''
 
     def json(self):
-        if self.image:
-            return {
-                "title": self.title,
-                "genre": self.genre.value,  # Use the .value of the Enum
-                "rating": self.rating,
-                "comment": self.comment,
-                "director": self.director,
-                "year": self.year,
-                "views": self.views,
-                "image": self.image
-            }
-        else:
-            return {
-                "title": self.title,
-                "genre": self.genre.value,  # Use the .value of the Enum
-                "rating": self.rating,
-                "comment": self.comment,
-                "director": self.director,
-                "year": self.year,
-                "views": self.views,
-            }
+        return {
+            "title": self.title,
+            "genre": self.genre.value,  # Use the .value of the Enum
+            "rating": self.rating,
+            "comment": self.comment,
+            "director": self.director,
+            "year": self.year,
+            "view_date": self.view_date,
+            "image": self.image
+        }
 
 if __name__ == "__main__":
-    movie = Movie(genre=Genre.COMEDY, title="The Hangover", rating=5, comment="Hilarious movie!", director="Todd Phillips", year=2009, views=['2021-10-15'])
+    movie = Movie(genre=Genre.COMEDY, title="The Hangover", rating=5, comment="Hilarious movie!", director="Todd Phillips", year=2009, view_date='2021-10-15')
     print(movie)
     print(movie.model_json_schema())

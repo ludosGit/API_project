@@ -22,7 +22,7 @@ def add_movie():
     comment = data.get('comment')
     director = data.get('director')
     year = data.get('year')
-    views = data.get('views')
+    view_date = data.get('view_date')
     # Check if an image is included in the request
     image_path = None
     if 'image' in request.files:
@@ -40,7 +40,7 @@ def add_movie():
         director=director,
         year=year,
         image=image_path,
-        views=[v for v in views]
+        view_date=view_date
     )
  
     MOVIES.append(movie_entry)
@@ -84,12 +84,11 @@ def get_movies_by_director(director):
 
 @app.route("/mymovies/directors/<string:director>/<string:title>", methods=["GET"])
 def get_movie_by_title(director, title):
-    movie = next((m for m in MOVIES if m.director.lower().replace(" ", "") == director.lower() and m.title.lower().replace(" ", "") == title.lower()), None)
-    print(movie)
-    if not movie:
+    movies = [m for m in MOVIES if m.director.lower().replace(" ", "") == director.lower() and m.title.lower().replace(" ", "") == title.lower()]
+    if not movies:
         return jsonify({"error": "Movie not found"}), 404
 
-    return jsonify(movie.json())
+    return jsonify([movie.json() for movie in movies])
 
 if __name__ == "__main__":
     # http://127.0.0.1:5000/?director=StanleyKubrick&title=PathsofGlory
