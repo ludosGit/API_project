@@ -10,3 +10,4 @@ class Genre(Enum):
     HORROR = "horror"
     THRILLER = "thriller"
     WAR = "war"
+    ANIME = "anime"

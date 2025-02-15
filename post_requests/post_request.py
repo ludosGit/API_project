@@ -4,14 +4,14 @@ print(os.getcwd())
 
 url = "http://127.0.0.1:5000/mymovies"
 data = {
-    "genre": "drama",
-    "title": "Inception",
-    "rating": 4,
-    "comment": "Good Nolan",
-    "director": "Christopher Nolan",
-    "year": 2010,
-    "image": "post_requests\inception.jpg",
-    "views": ["2021-10-15"]
+    "genre": "anime",
+    "title": "Ghost in the Shell",
+    "rating": 5,
+    "comment": "Great classic 90s anime cyberpunk",
+    "director": "Mamoru Oshii",
+    "year": 1995,
+    "image": "post_requests/ghost_in_the_shell.jpg",
+    "view_date": "2022-09-15"
 }
 files = {'image': open(data["image"], 'rb')}
 

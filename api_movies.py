@@ -1,9 +1,10 @@
 import os
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
-from movies_db import MOVIES
 from models.movie import Movie
 from models.genre import Genre
+from sqlite_movies_db import get_db, insert_movie
+from sqlite3 import IntegrityError
 
 UPLOAD_FOLDER = 'static/images'
 
@@ -42,8 +43,20 @@ def add_movie():
         image=image_path,
         view_date=view_date
     )
- 
-    MOVIES.append(movie_entry)
+    conn = get_db()
+    try:
+        insert_movie(movie_entry, conn)
+    except IntegrityError as e:
+        conn.close()
+        print(f"Integrity Error: {e}")  # Likely a PRIMARY KEY constraint violation
+        return jsonify({"error": "Movie with this title, view_date, and year already exists!"}), 409  # HTTP status code for conflict
+    except Exception as e:
+        conn.close()
+        print(f"Unexpected Error: {e}")  # General error handling
+        return jsonify({"error": "Unexpected error"}), 500  # HTTP status code for internal server error
+    conn.commit()
+    conn.close()
+
     return jsonify({"message": "Movie added successfully!", "movie": movie_entry.json()}), 201
 
 # @app.route("/")
@@ -58,16 +71,31 @@ def index():
 @app.route('/mymovies', methods=['GET'])
 def get_all_movies():
     """Endpoint to retrieve all movies."""
-    return jsonify([m.json() for m in MOVIES]), 200
+    conn = get_db()
+    cursor = conn.cursor()
+    movies = cursor.execute(
+        'SELECT * FROM movies ORDER BY director DESC'
+    ).fetchall()
+    conn.close()
+    # Convert rows to dictionaries directly
+    movies_list = [dict(movie) for movie in movies]
+    return jsonify(movies_list), 200
 
 @app.route('/mymovies/<genre>', methods=['GET'])
 def get_movies_by_genre(genre):
     """Endpoint to retrieve movies by genre."""
-    filtered_movies = [m for m in MOVIES if m.genre.value.lower() == genre.lower()]
-    if not filtered_movies:
+    conn = get_db()
+    cursor = conn.cursor()
+    movies = cursor.execute(
+        'SELECT * FROM movies WHERE genre = ? ORDER BY director DESC', (genre,)
+    ).fetchall()
+    conn.close()
+    # Convert rows to dictionaries directly
+    movies_list = [dict(movie) for movie in movies]
+    if not movies_list:
         return jsonify({"error": "No movies found for this genre"}), 404
 
-    return jsonify([m.json() for m in filtered_movies])
+    return jsonify(movies_list), 200
 
 @app.route('/mymovies/genres', methods=['GET'])
 def get_all_genres():
@@ -76,19 +104,34 @@ def get_all_genres():
 
 @app.route("/mymovies/directors/<string:director>", methods=["GET"])
 def get_movies_by_director(director):
-    filtered_movies = [m for m in MOVIES if m.director.lower().replace(" ", "") == director.lower()]
-    if not filtered_movies:
-        return jsonify({"error": "No movies found for this director"}), 404
+    conn = get_db()
+    cursor = conn.cursor()
+    movies = cursor.execute(
+        "SELECT * FROM movies WHERE LOWER(REPLACE(director, ' ', '')) = LOWER(REPLACE(?, ' ', '')) ORDER BY director DESC", (director, )
+    ).fetchall()
+    conn.close()
+    # Convert rows to dictionaries directly
+    movies_list = [dict(movie) for movie in movies]
+    if not movies_list:
+        return jsonify({"error": f"No movies found for this director: {director}"}), 404
 
-    return jsonify([m.json() for m in filtered_movies])
+    return jsonify(movies_list), 200
 
 @app.route("/mymovies/directors/<string:director>/<string:title>", methods=["GET"])
 def get_movie_by_title(director, title):
-    movies = [m for m in MOVIES if m.director.lower().replace(" ", "") == director.lower() and m.title.lower().replace(" ", "") == title.lower()]
-    if not movies:
-        return jsonify({"error": "Movie not found"}), 404
+    conn = get_db()
+    cursor = conn.cursor()
+    movies = cursor.execute(
+        "SELECT * FROM movies WHERE LOWER(REPLACE(director, ' ', '')) = LOWER(REPLACE(?, ' ', ''))"
+        " AND LOWER(REPLACE(title, ' ', '')) = LOWER(REPLACE(?, ' ', '')) ORDER BY director DESC", (director, title)
+    ).fetchall()
+    conn.close()
+    # Convert rows to dictionaries directly
+    movies_list = [dict(movie) for movie in movies]
+    if not movies_list:
+        return jsonify({"error": f"No movies found for this director: {director}"}), 404
 
-    return jsonify([movie.json() for movie in movies])
+    return jsonify(movies_list), 200
 
 if __name__ == "__main__":
     # http://127.0.0.1:5000/?director=StanleyKubrick&title=PathsofGlory
