@@ -1,16 +1,11 @@
 // Function to get movie data from the API using the URL params
 async function fetchMovieDetails() {
     const urlParams = new URLSearchParams(window.location.search);
-    const director = urlParams.get('director');
     const title = urlParams.get('title');
 
-    if (!director || !title) {
-        document.getElementById('movie-details').innerHTML = '<p class="error-message">Please provide both director and title in the URL.</p>';
-        return;
-    }
 
     try {
-        const response = await fetch(`/mymovies/directors/${director}/${title}`);
+        const response = await fetch(`/mymovies/title/${title}`);
         
         if (response.ok) {
             const movies = await response.json();

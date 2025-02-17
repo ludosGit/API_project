@@ -1,4 +1,5 @@
 import sqlite3
+import re
 from models.genre import Genre
 from models.movie import Movie
 
@@ -47,6 +48,10 @@ MOVIES = [
     )
 ]
 
+def get_title_initials(title):
+    words = [word[0] for word in title.split(' ')]
+    return ''.join(words).upper()  # Join and convert to uppercase
+
 def insert_movie(movie: Movie, conn: sqlite3.Connection):
     """Inserts a Pydantic Movie object into the SQLite database."""
     cursor = conn.cursor()
@@ -63,9 +68,11 @@ def create_database():
     conn = sqlite3.connect(DB_FILE)
     cursor = conn.cursor()
 
+    # Register function so SQLite can use it in SQL queries
+    conn.create_function("get_title_initials", 1, get_title_initials)
     # Create movies table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS movies (
+    cursor.execute(
+        '''CREATE TABLE IF NOT EXISTS movies (
             title TEXT NOT NULL,
             director TEXT NOT NULL,
             genre TEXT,
@@ -74,14 +81,15 @@ def create_database():
             comment TEXT,
             view_date TEXT NOT NULL,
             image TEXT,
+            movie_id TEXT GENERATED ALWAYS AS (
+                SUBSTR(view_date, 3, 2) || SUBSTR(view_date, 6, 2) || SUBSTR(view_date, 9, 2) ||
+                UPPER(REPLACE(title, ' ', '')) ||
+                year
+            ) STORED UNIQUE,
             PRIMARY KEY (title, view_date, year)
-        )
-    ''')
+        );'''
+    )
 
-    # cursor.executemany('''
-    #     INSERT INTO movies (title, director, genre, year, rating, comment, view_date)
-    #     VALUES (?, ?, ?, ?, ?, ?, ?)
-    # ''', MOVIES)
     for movie in MOVIES:
         insert_movie(movie, conn)
 
