@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template, make_response, url_f
 from werkzeug.utils import secure_filename
 from models.movie import Movie
 from models.genre import Genre
-from sqlite_movies_db import get_db, insert_movie
+from db import get_db, insert_movie
 from sqlite3 import IntegrityError
 from datetime import datetime, timedelta
 
