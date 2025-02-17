@@ -1,30 +1,36 @@
 // Function to get movie data from the API using the URL params
 async function fetchMovieDetails() {
     const urlParams = new URLSearchParams(window.location.search);
-    const director = urlParams.get('director');
     const title = urlParams.get('title');
 
-    if (!director || !title) {
-        document.getElementById('movie-details').innerHTML = '<p class="error-message">Please provide both director and title in the URL.</p>';
-        return;
-    }
 
     try {
-        const response = await fetch(`/mymovies/directors/${director}/${title}`);
+        const response = await fetch(`/mymovies/title/${title}`);
         
         if (response.ok) {
-            const movie = await response.json();
+            const movies = await response.json();
+            const allViewDates = movies.flatMap(movie => movie.view_date || []);
+            const sortedMovies = movies
+                .flatMap(movie => movie.view_date ? [{ ...movie }] : []) // Ensure view_date exists
+                .sort((a, b) => b.view_date.localeCompare(a.view_date)); // Sort in descending order
+            if (sortedMovies.length === 0) {
+                document.getElementById('movie-details').innerHTML = '<p class="error-message">No valid view dates found.</p>';
+                return;
+            }
+            const latestMovie = sortedMovies[0];
+
+            const firstImage = sortedMovies.find(movie => movie.image)?.image || '';
             
             const movieDetailsHtml = `
                 <div class="movie-container">
-                    <h2>${movie.title}</h2>
-                    <p><strong>Genre:</strong> ${movie.genre}</p>
-                    <p><strong>Rating:</strong> ${movie.rating}</p>
-                    <p><strong>Director:</strong> ${movie.director}</p>
-                    <p><strong>Year:</strong> ${movie.year}</p>
-                    <p><strong>Comment:</strong> ${movie.comment}</p>
-                    <p><strong>Views:</strong> ${movie.views.join(", ")}</p>
-                    <img src="${movie.image}" alt="${movie.title} Image" />
+                    <h2>${latestMovie.title}</h2>
+                    <p><strong>Genre:</strong> ${latestMovie.genre}</p>
+                    <p><strong>Rating:</strong> ${latestMovie.rating}</p>
+                    <p><strong>Director:</strong> ${latestMovie.director}</p>
+                    <p><strong>Year:</strong> ${latestMovie.year}</p>
+                    <p><strong>Comment:</strong> ${latestMovie.comment}</p>
+                    <p><strong>Views:</strong>  ${allViewDates.join(", ")}</p>
+                    <img src="${firstImage}" alt="${latestMovie.title} Image" />
                 </div>
             `;
             document.getElementById('movie-details').innerHTML = movieDetailsHtml;
