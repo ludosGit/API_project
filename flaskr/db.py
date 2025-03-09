@@ -2,7 +2,7 @@ import sqlite3
 import click
 from flask import current_app, g
 from flaskr.init_movies import MOVIES
-from models.movie import Movie
+from flaskr.models.movie import Movie
 
 
 def get_db() -> sqlite3.Connection:

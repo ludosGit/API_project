@@ -1,5 +1,5 @@
-from models.movie import Movie
-from models.genre import Genre
+from flaskr.models.movie import Movie
+from flaskr.models.genre import Genre
 
 MOVIES = [
     Movie(

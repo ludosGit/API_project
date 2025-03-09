@@ -9,7 +9,7 @@
 # Custom Validators: Allows defining custom validation logic.
 
 from pydantic import BaseModel
-from models.genre import Genre
+from flaskr.models.genre import Genre
 
 class Movie(BaseModel):
     genre: Genre

@@ -1,15 +1,13 @@
-import functools
-
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for, make_response, request, jsonify
+    Blueprint, request, url_for, make_response, request, jsonify
 )
 
 from flaskr.db import get_db
 
 import os
 from werkzeug.utils import secure_filename
-from models.movie import Movie
-from models.genre import Genre
+from flaskr.models.movie import Movie
+from flaskr.models.genre import Genre
 from flaskr.db import insert_movie
 from sqlite3 import IntegrityError
 from datetime import datetime, timedelta
@@ -129,6 +127,7 @@ def get_movies_by_genre(genre):
 def get_all_genres():
     """Endpoint to retrieve all genres."""
     return jsonify([genre.value for genre in Genre]), 200
+
 
 @bp.route('/directors', methods=['GET'])
 def get_all_directors():
