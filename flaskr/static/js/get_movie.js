@@ -3,7 +3,6 @@ async function fetchMovieDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const title = urlParams.get('title');
 
-
     try {
         const response = await fetch(`/mymovies/title/${title}`);
         

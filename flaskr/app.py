@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template, make_response, url_f
 from werkzeug.utils import secure_filename
 from models.movie import Movie
 from models.genre import Genre
-from db import get_db, insert_movie
+from flaskr.db_old import get_db, insert_movie
 from sqlite3 import IntegrityError
 from datetime import datetime, timedelta
 
@@ -146,7 +146,7 @@ def get_movie_by_id(id):
     # Convert rows to dictionaries directly
     movies_list = [dict(movie) for movie in movies]
     if not movies_list:
-        return jsonify({"error": f"No movies found for this movie id: {index}"}), 404
+        return jsonify({"error": f"No movies found for this movie id: {id}"}), 404
 
     return jsonify(movies_list), 200
 
@@ -161,7 +161,7 @@ def get_movie_by_title(title):
     # Convert rows to dictionaries directly
     movies_list = [dict(movie) for movie in movies]
     if not movies_list:
-        return jsonify({"error": f"No movies found for this movie id: {index}"}), 404
+        return jsonify({"error": f"No movies found for this movie title: {title}"}), 404
 
     return jsonify(movies_list), 200
 
