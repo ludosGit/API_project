@@ -1,20 +1,41 @@
+from flask import (
+    Blueprint, request, url_for, make_response, request, jsonify
+)
+
+from flaskr.db import get_db
+
 import os
-from flask import Flask, request, jsonify, render_template, make_response, url_for
+import pdb
 from werkzeug.utils import secure_filename
-from models.movie import Movie
-from models.genre import Genre
-from sqlite_movies_db import get_db, insert_movie
+from flaskr.models.movie import Movie
+from flaskr.models.genre import Genre
+from flaskr.db import insert_movie
 from sqlite3 import IntegrityError
 from datetime import datetime, timedelta
 
-UPLOAD_FOLDER = 'static/images'
+UPLOAD_FOLDER = 'flaskr/static/images'
 
-app = Flask(
-    __name__,
-    static_url_path='/static'
-)
+bp = Blueprint('mymovies_blueprint', __name__, url_prefix='/mymovies')
 
-@app.route('/mymovies', methods=['POST'])
+
+def execute_sql_and_fetch(conn, sql, params=()):
+    """Helper function to execute SQL commands."""
+    conn = get_db()
+    cursor = conn.cursor()
+    data = cursor.execute(sql, params).fetchall()
+    conn.close()
+    return data
+
+def execute_sql(conn, sql, params=()):
+    """Helper function to execute SQL commands."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(sql, params)
+    conn.commit()
+    conn.close()
+    return None
+
+@bp.route('/', methods=['POST'])
 def add_movie():
     """Endpoint to add a movie."""
     data = request.form
@@ -60,12 +81,8 @@ def add_movie():
 
     return jsonify({"message": "Movie added successfully!", "movie": movie_entry.json()}), 201
 
-# Route to render HTML page
-@app.route("/", methods=["GET"])
-def index():
-    return render_template("movie_frontend.html")
 
-@app.route('/mymovies', methods=['GET'])
+@bp.route('/', methods=['GET'])
 def get_all_movies():
     """Endpoint to retrieve all movies."""
     conn = get_db()
@@ -82,7 +99,8 @@ def get_all_movies():
     response.headers["Expires"] = (datetime.now() + timedelta(hours=1)).strftime("%a, %d %b %Y %H:%M:%S GMT")
     return response
 
-@app.route('/mymovies/genres/<genre>', methods=['GET'])
+
+@bp.route('/genres/<genre>', methods=['GET'])
 def get_movies_by_genre(genre):
     """Endpoint to retrieve movies by genre."""
     conn = get_db()
@@ -98,12 +116,14 @@ def get_movies_by_genre(genre):
 
     return jsonify(movies_list), 200
 
-@app.route('/mymovies/genres', methods=['GET'])
+
+@bp.route('/genres', methods=['GET'])
 def get_all_genres():
     """Endpoint to retrieve all genres."""
     return jsonify([genre.value for genre in Genre]), 200
 
-@app.route('/mymovies/directors', methods=['GET'])
+
+@bp.route('/directors', methods=['GET'])
 def get_all_directors():
     """Endpoint to retrieve all directors."""
     conn = get_db()
@@ -116,7 +136,8 @@ def get_all_directors():
 
     return jsonify(directors_list), 200
 
-@app.route("/mymovies/directors/<string:director>", methods=["GET"])
+
+@bp.route("/directors/<string:director>", methods=["GET"])
 def get_movies_by_director(director):
     conn = get_db()
     cursor = conn.cursor()
@@ -127,6 +148,7 @@ def get_movies_by_director(director):
     # Convert rows to dictionaries directly
     if not movies:
         return jsonify({"error": f"No movies found for this director: {director}"}), 404
+
     movies_list = []
     for movie in movies:
         movie = dict(movie)
@@ -135,22 +157,49 @@ def get_movies_by_director(director):
 
     return jsonify(movies_list), 200
 
-@app.route("/mymovies/id/<string:id>", methods=["GET"])
-def get_movie_by_id(id):
-    conn = get_db()
-    cursor = conn.cursor()
-    movies = cursor.execute(
-        "SELECT * FROM movies WHERE movie_id = ?", (id, )
-    ).fetchall()
-    conn.close()
-    # Convert rows to dictionaries directly
-    movies_list = [dict(movie) for movie in movies]
-    if not movies_list:
-        return jsonify({"error": f"No movies found for this movie id: {index}"}), 404
 
-    return jsonify(movies_list), 200
+@bp.route("/id/<string:movie_id>", methods=["GET", "PUT"])
+def get_movie_by_id(movie_id):
+    if request.method == 'GET':
+        conn = get_db()
+        cursor = conn.cursor()
+        movies = cursor.execute(
+            "SELECT * FROM movies WHERE movie_id = ?", (movie_id, )
+        ).fetchall()
+        conn.close()
+        # Convert rows to dictionaries directly
+        movies_list = [dict(movie) for movie in movies]
+        if not movies_list:
+            message = f"No movies found for this movie id: {movie_id}"
+            status_code = 404
+        else:
+            message = jsonify(movies_list)
+            status_code = 200
 
-@app.route("/mymovies/title/<string:title>", methods=["GET"])
+    elif request.method == 'PUT':
+        # pdb.set_trace()
+        data = request.form
+        genre = data.get('genre')
+        rating = data.get('rating')
+        comment = data.get('comment')
+        director = data.get('director')
+
+        conn = get_db()
+        cursor = conn.cursor()
+        # Update the movie with the given movie_id
+        cursor.execute(
+            "UPDATE movies SET genre = ?, director = ?, rating = ?, comment = ? WHERE movie_id = ?",
+            (genre, director, rating, comment, movie_id)
+        )
+        conn.commit()
+        conn.close()
+        message = jsonify({"message": f"Movie with movie_id {movie_id} updated successfully!"})
+        status_code = 200 
+
+    return message, status_code
+
+
+@bp.route("/title/<string:title>", methods=["GET"])
 def get_movie_by_title(title):
     conn = get_db()
     cursor = conn.cursor()
@@ -161,11 +210,30 @@ def get_movie_by_title(title):
     # Convert rows to dictionaries directly
     movies_list = [dict(movie) for movie in movies]
     if not movies_list:
-        return jsonify({"error": f"No movies found for this movie id: {index}"}), 404
+        return jsonify({"error": f"No movies found for this movie title: {title}"}), 404
 
     return jsonify(movies_list), 200
 
-if __name__ == "__main__":
-    # http://127.0.0.1:5000/?director=StanleyKubrick&title=PathsofGlory
-    app.run(host="0.0.0.0", port=5000, debug=True)
+
+@bp.route("/delete/id/<string:movie_id>", methods=["DELETE"])
+def delete_movie_id(movie_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM movies WHERE movie_id = ?", (movie_id, ))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": f"Movie with movie_id {movie_id} deleted successfully!"}), 204
+
+
+@bp.route("/delete/title/<string:title>", methods=["DELETE"])
+def delete_movie_title(title):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM movies WHERE LOWER(REPLACE(title, ' ', '')) = LOWER(REPLACE(?, ' ', ''))", (title, ))
+    conn.commit()
+    conn.close()
+
+    return jsonify({"message": f"Movie with title {title} deleted successfully!"}), 204
+
 
