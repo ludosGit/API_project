@@ -32,7 +32,7 @@ def create_app(test_config=None):
     # Route to render HTML page
     @app.route("/", methods=["GET"])
     def index():
-        # http://127.0.0.1:5000/?director=StanleyKubrick&title=PathsofGlory
+        # http://127.0.0.1:5000/?title=PathsofGlory
         return render_template("movie_frontend.html")
 
     return app
